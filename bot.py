@@ -1,8 +1,10 @@
 #! /usr/bin/python3
 import discord
 import asyncio
+import time
 
 ELEVATOR_MUSIC = "https://www.youtube.com/watch?v=VBlFHuCzPgY"
+MADA_MADA = "https://www.youtube.com/watch?v=faQEFPPFIK8"
 
 current_track = ELEVATOR_MUSIC
 
@@ -50,6 +52,21 @@ async def change_song(message):
     else:
         await client.send_message(message.channel, 'The current song is : "{}"'.format(elevator.title))
 
+async def playSound(message, soundURL):
+    if not in_elevator:
+        voice_channel = client.get_channel(message.author.voice.voice_channel.id)
+        voice_client = await client.join_voice_channel(voice_channel)
+        genji = await voice_client.create_ytdl_player(soundURL)
+        genji.volume = .2
+        genji.start() 
+        genji.sleep(5) #idk if theres a "wait for playback finish"
+
+    if not in_elevator:
+        await client.voice_client_in(message.server).disconnect()
+    else:
+    	elevatorChannel = discord.utils.get(after.server.channels, name=elevatorName)
+        await client.move_member(message.server, elevatorChannel)
+
 @client.async_event
 async def on_server_role_update(before, after):
     if (after.is_everyone):
@@ -80,6 +97,7 @@ async def create_roles(server):
     for color in to_create:
         await client.create_role(server, name=color, color=getattr(discord.Color, color)())
         print("Created " + color)
+
         
 def is_admin(member):
     return "Admin" in map(lambda r: r.name, member.roles)
@@ -103,6 +121,9 @@ async def on_message(message):
 
         if command == '!song':
             await change_song(message)
+
+        if command == "!madamada":
+        	await playSound(message, MADA_MADA)
                     
         if command =='!debug':
             if message.author.id == '123301224022933504':
@@ -142,9 +163,9 @@ async def on_ready():
     for server in client.servers:
         await create_roles(server)
         await refresh_roles(server)
+        await client.change_presence(game=discord.Game(name='The Marimba'))
     
     print('Ready')
-
 
 with open("creds") as f:
     creds = f.readlines()[0].strip()
